@@ -1,0 +1,93 @@
+---
+title: 'STAT 6021: Final Project EDA'
+author: "Group 1"
+output: html_document
+---
+
+## Libraries
+
+```{r}
+library(tidyverse)
+library(ggcorrplot)
+```
+
+## Data
+
+Looking at sleep efficiency, with hours of sleep as the response variable
+
+```{r}
+sleep <- read.csv("Sleep_Efficiency.csv")
+
+# Remove ID, bedtime, and wakeup time
+sleep <- sleep[, -c(1, 4, 5)]
+View(sleep)
+```
+
+```{r}
+colnames(sleep)
+```
+
+## Cleaning
+
+```{r}
+# Turn percentages to proportions
+sleep <- sleep %>% 
+  mutate(REM.sleep.percentage = REM.sleep.percentage / 100,
+         Deep.sleep.percentage = Deep.sleep.percentage / 100,
+         Light.sleep.percentage = Light.sleep.percentage / 100)
+
+
+```
+
+```{r}
+str(sleep)
+```
+
+## Scatter
+
+```{r}
+long<-gather(sleep, key="predictor", value = "value",
+             REM.sleep.percentage, Deep.sleep.percentage, Light.sleep.percentage)
+
+ggplot(long, aes(x=value, y=Sleep.duration, color=predictor))+geom_point()+
+  facet_wrap(~predictor,scales = "free_x")
+```
+
+```{r}
+ggplot(long, aes(x=value, y=Sleep.efficiency, color=predictor))+geom_point()+
+  facet_wrap(~predictor,scales = "free_x")
+```
+
+## Boxplots
+
+### Alcohol Consumption
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=Sleep.duration, fill=as.factor(Alcohol.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(x="Number of Drinks", fill="Alcohol Consumption")
+```
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=Sleep.efficiency, fill=as.factor(Alcohol.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(x="Number of Drinks", fill="Alcohol Consumption")
+```
+
+### Caffeine Consumption
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=Sleep.duration, fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(x="mg of Caffeine", fill="Caffeine Consumption")
+```
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=Sleep.efficiency, fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(x="mg of Caffeine", fill="Caffeine Consumption")
+```
+
+## Correlation Matrix
+
+```{r}
+sleep.num <- sleep[-c(2, 11)]
+cor_mat<-round(cor(sleep.num),2)
+ggcorrplot(cor_mat,lab=TRUE, type="lower", method="circle")
+```
