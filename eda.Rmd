@@ -1,7 +1,8 @@
 ---
 title: 'STAT 6021: Final Project EDA'
 author: "Group 1"
-output: html_document
+output:
+  pdf_document: default
 ---
 
 ## Libraries
@@ -47,7 +48,8 @@ str(sleep)
 
 ```{r}
 long<-gather(sleep, key="predictor", value = "value",
-             REM.sleep.percentage, Deep.sleep.percentage, Light.sleep.percentage)
+             REM.sleep.percentage, Deep.sleep.percentage, 
+             Light.sleep.percentage)
 
 ggplot(long, aes(x=value, y=Sleep.duration, color=predictor))+geom_point()+
   facet_wrap(~predictor,scales = "free_x")
