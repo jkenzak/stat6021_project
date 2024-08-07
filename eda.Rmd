@@ -63,23 +63,27 @@ ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=weighted.sleep,
                   fill=as.factor(Alcohol.consumption)))+
   geom_boxplot(outlier.color="red")+geom_jitter()+
   labs(title = "Alcohol Consumption and Weighted Sleep Value",
-       x="Amount of Alcohol (oz)", y = "Weighted Sleep Value", fill="Alcohol Consumption")
+       x="Amount of Alcohol (oz)", y = "Weighted Sleep Value", 
+       fill="Alcohol Consumption")
 ```
 
 ### Caffeine Consumption
 
 ```{r}
 ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=weighted.sleep,
-                  fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+                  fill=as.factor(Caffeine.consumption)))+
+  geom_boxplot(outlier.color="red")+geom_jitter()+
   labs(title = "Caffeine Consumption and Weighted Sleep Value",
-       x="Amount of Caffeine (mg)", y = "Weighted Sleep Value", fill="Caffeine Consumption")
+       x="Amount of Caffeine (mg)", y = "Weighted Sleep Value", 
+       fill="Caffeine Consumption")
 ```
 
 ### Smoking Status
 
 ```{r}
 ggplot(sleep, aes(x=as.factor(Smoking.status), y=weighted.sleep,
-                  fill=as.factor(Smoking.status)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+                  fill=as.factor(Smoking.status)))+
+  geom_boxplot(outlier.color="red")+geom_jitter()+
   labs(title = "Smoking Status and Weighted Sleep Value",
        x="", y = "Weighted Sleep Value", fill="Smoking Status")
 ```
@@ -88,9 +92,11 @@ ggplot(sleep, aes(x=as.factor(Smoking.status), y=weighted.sleep,
 
 ```{r}
 ggplot(sleep, aes(x=as.factor(Exercise.frequency), y=weighted.sleep,
-                  fill=as.factor(Exercise.frequency)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+                  fill=as.factor(Exercise.frequency)))+
+  geom_boxplot(outlier.color="red")+geom_jitter()+
   labs(title = "Exercise Frequency and Weighted Sleep Value",
-       x="Number of Times Exercised per week", y = "Weighted Sleep Value", fill="Exercise Frequency")
+       x="Number of Times Exercised per week", 
+       y = "Weighted Sleep Value", fill="Exercise Frequency")
 ```
 
 ## Distributions
