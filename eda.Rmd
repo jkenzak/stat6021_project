@@ -37,53 +37,13 @@ sleep <- sleep %>%
          Deep.sleep.percentage = Deep.sleep.percentage / 100,
          Light.sleep.percentage = Light.sleep.percentage / 100)
 
-
+# Weighted sleep (Sleep.duration * Sleep.efficiency)
+sleep <- sleep %>% 
+  mutate(weighted.sleep = Sleep.duration * Sleep.efficiency)
 ```
 
 ```{r}
 str(sleep)
-```
-
-## Scatter
-
-```{r}
-long<-gather(sleep, key="predictor", value = "value",
-             REM.sleep.percentage, Deep.sleep.percentage, 
-             Light.sleep.percentage)
-
-ggplot(long, aes(x=value, y=Sleep.duration, color=predictor))+geom_point()+
-  facet_wrap(~predictor,scales = "free_x")
-```
-
-```{r}
-ggplot(long, aes(x=value, y=Sleep.efficiency, color=predictor))+geom_point()+
-  facet_wrap(~predictor,scales = "free_x")
-```
-
-## Boxplots
-
-### Alcohol Consumption
-
-```{r}
-ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=Sleep.duration, fill=as.factor(Alcohol.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
-  labs(x="Number of Drinks", fill="Alcohol Consumption")
-```
-
-```{r}
-ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=Sleep.efficiency, fill=as.factor(Alcohol.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
-  labs(x="Number of Drinks", fill="Alcohol Consumption")
-```
-
-### Caffeine Consumption
-
-```{r}
-ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=Sleep.duration, fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
-  labs(x="mg of Caffeine", fill="Caffeine Consumption")
-```
-
-```{r}
-ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=Sleep.efficiency, fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
-  labs(x="mg of Caffeine", fill="Caffeine Consumption")
 ```
 
 ## Correlation Matrix
@@ -93,3 +53,70 @@ sleep.num <- sleep[-c(2, 11)]
 cor_mat<-round(cor(sleep.num),2)
 ggcorrplot(cor_mat,lab=TRUE, type="lower", method="circle")
 ```
+
+## Boxplots
+
+### Alcohol Consumption
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=weighted.sleep, 
+                  fill=as.factor(Alcohol.consumption)))+
+  geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(title = "Alcohol Consumption and Weighted Sleep Value",
+       x="Amount of Alcohol (oz)", y = "Weighted Sleep Value", fill="Alcohol Consumption")
+```
+
+### Caffeine Consumption
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=weighted.sleep,
+                  fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(title = "Caffeine Consumption and Weighted Sleep Value",
+       x="Amount of Caffeine (mg)", y = "Weighted Sleep Value", fill="Caffeine Consumption")
+```
+
+### Smoking Status
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Smoking.status), y=weighted.sleep,
+                  fill=as.factor(Smoking.status)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(title = "Smoking Status and Weighted Sleep Value",
+       x="", y = "Weighted Sleep Value", fill="Smoking Status")
+```
+
+### Exercise Frequency
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Exercise.frequency), y=weighted.sleep,
+                  fill=as.factor(Exercise.frequency)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(title = "Exercise Frequency and Weighted Sleep Value",
+       x="Number of Times Exercised per week", y = "Weighted Sleep Value", fill="Exercise Frequency")
+```
+
+## Distributions
+
+```{r}
+ggplot(sleep,aes(x=Sleep.duration))+
+  geom_density()+
+  labs(title = "Distribution of Sleep Duration",
+       x = "Sleep Duration (hours)",
+       y = "Density")
+```
+
+```{r}
+ggplot(sleep,aes(x=Sleep.efficiency))+
+  geom_density()+
+  labs(title = "Distribution of Sleep Efficiency",
+       x = "Sleep Efficiency",
+       y = "Density")
+```
+
+
+```{r}
+ggplot(sleep,aes(x=weighted.sleep))+
+  geom_density()+
+  labs(title = "Distribution of Weighted Sleep Value",
+       x = "Weighted Sleep Value",
+       y = "Density")
+```
+
