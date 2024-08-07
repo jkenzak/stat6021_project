@@ -21,7 +21,7 @@ Looking at sleep efficiency, with hours of sleep as the response variable
 
 ```{r, echo=FALSE} 
 
-sleep <- read.csv("C:/Users/qaism/OneDrive - University of Virginia/Documents/GitHub/MSDS/stat6021_project/Sleep_Efficiency.csv")
+sleep <- read.csv("Sleep_Efficiency.csv")
 
 # Remove ID, bedtime, and wakeup time
 sleep <- sleep[, -c(1, 4, 5)]
@@ -37,210 +37,115 @@ sleep <- sleep %>%
          Deep.sleep.percentage = Deep.sleep.percentage / 100,
          Light.sleep.percentage = Light.sleep.percentage / 100)
 
+# Weighted sleep (Sleep.duration * Sleep.efficiency)
+sleep <- sleep %>% 
+  mutate(weighted.sleep = Sleep.duration * Sleep.efficiency)
 ```
 
 ```{r}
 str(sleep)
 ```
-## Data Exploration
 
-```{r}
-# Distribution of Sleep Duration and Sleep Efficiency 
-ggplot(sleep, aes(x=Sleep.duration)) + 
-  geom_histogram(binwidth=0.5, fill="blue", color="black") + 
-  labs(title="Sleep Duration Distribution", x="Sleep Duration", y="Frequency")
-
-ggplot(sleep, aes(x=Sleep.efficiency)) +
-  geom_histogram(binwidth=0.05, fill="blue", color="black") +
-  labs(title="Sleep Efficiency Distribution", x="Sleep Efficiency", y="Frequency")
-```
-
-## Scatter
-
-```{r}
-long<-gather(sleep, key="predictor", value = "value",
-             REM.sleep.percentage, Deep.sleep.percentage, 
-             Light.sleep.percentage)
-
-ggplot(long, aes(x=value, y=Sleep.duration, color=predictor))+geom_point()+
-  facet_wrap(~predictor,scales = "free_x")
-```
-
-```{r}
-ggplot(long, aes(x=value, y=Sleep.efficiency, color=predictor))+geom_point()+
-  facet_wrap(~predictor,scales = "free_x")
-```
-
-## Boxplots
-
-### Alcohol Consumption
-
-```{r}
-ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=Sleep.duration, fill=as.factor(Alcohol.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
-  labs(x="Number of Drinks", fill="Alcohol Consumption")
-#alchol consumption type
-alcohol_consumption <- c("None", "1-2", "3-4", "5-6", "7-8", "9-10")
-
-```
-
-```{r}
-ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=Sleep.efficiency, fill=as.factor(Alcohol.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
-  labs(x="Number of Drinks", fill="Alcohol Consumption")
-```
-
-### Caffeine Consumption
-
-```{r}
-ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=Sleep.duration, fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
-  labs(x="mg of Caffeine", fill="Caffeine Consumption")
-```
-
-```{r}
-ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=Sleep.efficiency, fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
-  labs(x="mg of Caffeine", fill="Caffeine Consumption")
-```
-
-## Correlation Matrix
-
-```{r}
-sleep.num <- sleep[-c(2, 11)]
-cor_mat<-round(cor(sleep.num),2)
-ggcorrplot(cor_mat,lab=TRUE, type="lower", method="circle")
-```
-
-## Regression 
-
-```{r}
-# Multiple Regression Model
-model1 <- lm(Sleep.efficiency ~ REM.sleep.percentage + Deep.sleep.percentage , data=sleep)
-summary(model1)
-```
-
-```{r}
-model_transformed <- lm(log(Sleep.efficiency) ~ REM.sleep.percentage + I(REM.sleep.percentage^2) + Deep.sleep.percentage + I(Deep.sleep.percentage^2) + Age + Gender + Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
-summary(model_transformed)
-# Diagnostic plots for the multiple regression model
-par(mfrow = c(2, 2))
-plot(model_transformed)
-```
-
-### The coefficients for REM.sleep.percentage and Deep.sleep.percentage are statistically significant with p-values < 0.001.
-
-###  Each 1% increase in REM sleep percentage is associated with a 0.907 increase in sleep efficiency, while each 1% increase in deep sleep percentage is associated with a 0.723 increase in sleep efficiency.
-
-### Multiple R-squared: 0.6734, 67.34% of the variance in sleep efficiency.
-### F-statistic: 462.9 with a p-value < 2.2e-16
-
-### Q-Q Plot: The points mostly follow the diagonal line but deviate at the tails, suggesting mild non-normality of residuals.
-
-```{r}
-# Create a new column for high efficiency sleep
-sleep$High.efficiency <- ifelse(sleep$Sleep.efficiency > 0.85, 1, 0)
-```
-
-## Sleep Duration and Efficiency by Age
-
-```{r}
-# Plot of sleep duration by age
-ggplot(sleep, aes(x=Age, y=Sleep.duration)) + 
-  geom_point() + 
-  geom_smooth(method="loess", se=FALSE) + 
-  labs(title="Sleep Duration by Age", x="Age", y="Sleep Duration (hours)")
-# Plot of sleep efficiency by age
-ggplot(sleep, aes(x=Age, y=Sleep.efficiency)) + 
-  geom_point() + 
-  geom_smooth(method="loess", se=FALSE) + 
-  labs(title="Sleep Efficiency by Age", x="Age", y="Sleep Efficiency")
-
-```
-
-```{r}
-sleep <- sleep %>%
-  mutate(Sufficient.sleep = ifelse(Sleep.duration >= 7, 1, 0))
-
-table(sleep$Sufficient.sleep)
-
-# logistic regression model for sufficient sleep
-logistic_model_sufficient_sleep_inter <- glm(Sufficient.sleep ~ REM.sleep.percentage * Deep.sleep.percentage + Caffeine.consumption + Alcohol.consumption + Age + Gender + Smoking.status + Exercise.frequency, family = binomial, data = sleep)
-
-
-summary(logistic_model_sufficient_sleep_inter)
-```
-
-
-
-```{r}
-#weighted sleep (sleep duration * sleep efficiency)
-sleep$Weighted.sleep <- sleep$Sleep.duration * sleep$Sleep.efficiency
-
-#weighted sleep distribution
-ggplot(sleep, aes(x=Weighted.sleep)) + 
-  geom_histogram(binwidth=0.1, fill="blue", color="black") + 
-  labs(title="Weighted Sleep Distribution", x="Weighted Sleep", y="Frequency")
-
-#create a new column for age groups
-sleep$Age.group <- cut(sleep$Age, breaks=c(0, 20, 30, 40, 50, 60, 70, 80, 90, 100), labels=c("0-20", "21-30", "31-40", "41-50", "51-60", "61-70", "71-80", "81-90", "91-100"))
-
-
-# by age groups
-ggplot(sleep, aes(x=Age.group, y=Weighted.sleep, fill=Age.group)) + 
-  geom_boxplot(outlier.color="red") + 
-  geom_jitter() + 
-  labs(title="Weighted Sleep by Age Group", x="Age Group", y="Weighted Sleep", fill="Age Group")
-
-```
 
 ## Summary Statistics
 
 ```{r}
 #sleep duration
 summary(sleep$Sleep.duration)
-
-#sleep efficiency
-summary(sleep$Sleep.efficiency)
-
-#weighted sleep
-summary(sleep$Weighted.sleep)
 ```
 
+
+```{r}
+#sleep efficiency
+summary(sleep$Sleep.efficiency)
+```
+
+
+```{r}
+#weighted sleep
+summary(sleep$weighted.sleep)
+```
 
 
 ```{r}
 # Model for sleep duration with consumption predictors
-model_sleep_duration_consumption <- lm(Sleep.duration ~ Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
-summary(model_sleep_duration_consumption)
-
-# Calculate RMSE for the model
-rmse_sleep_duration_consumption <- sqrt(mean(model_sleep_duration_consumption$residuals^2))
-rmse_sleep_duration_consumption
+lm.duration <- lm(Sleep.duration ~ Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
+summary(lm.duration)
 ```
-### The predictors (caffeine, alcohol, smoking, and exercise) do not significantly explain the variance in sleep duration, as indicated by the low R-squared value and high RMSE. The p-values for the coefficients are all above 0.05, suggesting they are not significant predictors.
 
 ```{r}
-# Model for sleep efficiency with consumption predictors
-model_sleep_efficiency_consumption <- lm(Sleep.efficiency ~ Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
-summary(model_sleep_efficiency_consumption)
-
-# Calculate RMSE for the model
-rmse_sleep_efficiency_consumption <- sqrt(mean(model_sleep_efficiency_consumption$residuals^2))
-rmse_sleep_efficiency_consumption
-
+# Model for weighted sleep with consumption predictors
+lm.weightsleep <- lm(weighted.sleep ~ Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
+summary(lm.weightsleep)
 ```
-### Alcohol consumption, Smoking status, and Exercise frequency are statistically significant. The model explains 27.68% of the variability in sleep efficiency.
 
+### Model Assumptions
 
 ```{r}
-#Full model for sleep efficiency, including all predictors
+# Only predictors
+sleep2 <- sleep[,c(13,1,9,10,11,12)]
 
-model_sleep_efficiency_full <- lm(Sleep.efficiency ~ Age + Gender + REM.sleep.percentage + Deep.sleep.percentage + Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
-summary(model_sleep_efficiency_full)
-
-# Calculate RMSE for the model
-rmse_sleep_efficiency_full <- sqrt(mean(model_sleep_efficiency_full$residuals^2))
-rmse_sleep_efficiency_full
-
+# Drop missing predictors
+sleep2 <- na.omit(sleep2)
 ```
 
-### This model explains a significant amount of the variance in sleep efficiency (R-squared = 0.7181) and has a low RMSE (0.072). The predictors (age, REM sleep percentage, deep sleep percentage, caffeine consumption, alcohol consumption, smoking status, and exercise frequency) are significant, making this model very effective for predicting sleep efficiency.
 
+#### Linearity assumption
+
+```{r}
+long <- gather(sleep2, key="predictor", value="value", 
+               Age, Caffeine.consumption, Alcohol.consumption,
+               Smoking.status, Exercise.frequency)
+
+ggplot(long, aes(x=value, y=weighted.sleep, color=predictor)) +
+  geom_point() +
+  facet_wrap(~predictor, scale="free_x")
+```
+
+The linearity assumption isn't totally met, due to the nature of our predictors. Besides age, which doesn't seem to exhibit any sort of linear relationship, our data is broken up into distinct categories so our x-axis wouldn't be continuous. As a result, a linear relationship isn't super clear.
+
+
+#### Equal variance and Independence
+```{r}
+model_pred <- mutate(sleep2, predictions=fitted(lm.weightsleep), 
+                        resid=residuals(lm.weightsleep))
+
+ggplot(model_pred, aes(x=predictions, y=resid)) +
+  geom_point() + 
+  geom_hline(yintercept = 0, color="aquamarine4")
+```
+
+The equal variance and independence assumptions appear to be met as the residuals appear to be scattered around 0 and there are no apparent clusters
+
+#### Normality assumption
+```{r}
+ggplot(model_pred, aes(sample=resid)) +
+  stat_qq() + stat_qq_line(color="red")
+```
+
+Our model fits the normality assumption as it very closely follows the line of normality for the Q-Q plot. This means that our residuals follow a normal distribution and with it meeting all of the assumptions except for potentially the linear assumption. Therefore, we deem this model to be acceptable
+
+### Case A: Unhealthy
+```{r}
+caseA <- data.frame(Age=23, Caffeine.consumption=200, Alcohol.consumption=5,
+                    Smoking.status="Yes", Exercise.frequency=0)
+
+predict(lm.weightsleep, caseA, interval="prediction")
+```
+
+### Case B: Health nut
+```{r}
+caseB <- data.frame(Age=50, Caffeine.consumption=0, Alcohol.consumption=0,
+                    Smoking.status="No", Exercise.frequency=5)
+
+predict(lm.weightsleep, caseB, interval="prediction")
+```
+
+### Case C: Average College Student on weekend
+```{r}
+caseC <- data.frame(Age=22, Caffeine.consumption=100, Alcohol.consumption=3,
+                    Smoking.status="No", Exercise.frequency=3)
+
+predict(lm.weightsleep, caseC, interval="confidence")
+```
 
