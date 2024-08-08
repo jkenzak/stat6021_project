@@ -1,0 +1,186 @@
+---
+title: 'STAT 6021: Final Project EDA'
+author: "Group 1"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+## Libraries
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(ggcorrplot)
+library(ResourceSelection)
+library(car)
+library(ggplot2)
+library(broom)
+library(grid)
+library(gridExtra)
+```
+
+## Data
+
+
+```{r, echo=FALSE} 
+
+sleep <- read.csv("C:/Users/qaism/OneDrive - University of Virginia/Documents/GitHub/MSDS/stat6021_project/Sleep_Efficiency.csv")
+
+# Remove ID, bedtime, and wakeup time
+sleep <- sleep[, -c(1, 4, 5)]
+colnames(sleep)
+```
+
+## Cleaning
+
+```{r}
+# Turn percentages to proportions
+sleep <- sleep %>% 
+  mutate(REM.sleep.percentage = REM.sleep.percentage / 100,
+         Deep.sleep.percentage = Deep.sleep.percentage / 100,
+         Light.sleep.percentage = Light.sleep.percentage / 100)
+
+```
+
+
+## Data Exploration
+
+```{r}
+# Distribution of Sleep Duration and Sleep Efficiency 
+ggplot(sleep, aes(x=Sleep.duration)) + 
+  geom_histogram(binwidth=0.5, fill="blue", color="black") + 
+  labs(title="Sleep Duration Distribution", x="Sleep Duration", y="Frequency")
+
+ggplot(sleep, aes(x=Sleep.efficiency)) +
+  geom_histogram(binwidth=0.05, fill="blue", color="black") +
+  labs(title="Sleep Efficiency Distribution", x="Sleep Efficiency", y="Frequency")
+```
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Alcohol.consumption), y=Sleep.efficiency, fill=as.factor(Alcohol.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(x="Number of Drinks", fill="Alcohol Consumption")
+```
+
+```{r}
+ggplot(sleep, aes(x=as.factor(Caffeine.consumption), y=Sleep.efficiency, fill=as.factor(Caffeine.consumption)))+geom_boxplot(outlier.color="red")+geom_jitter()+
+  labs(x="mg of Caffeine", fill="Caffeine Consumption")
+```
+```{r}
+# Plot of sleep duration by age
+ggplot(sleep, aes(x=Age, y=Sleep.duration)) + 
+  geom_point() + 
+  geom_smooth(method="loess", se=FALSE) + 
+  labs(title="Sleep Duration by Age", x="Age", y="Sleep Duration (hours)")
+# Plot of sleep efficiency by age
+ggplot(sleep, aes(x=Age, y=Sleep.efficiency)) + 
+  geom_point() + 
+  geom_smooth(method="loess", se=FALSE) + 
+  labs(title="Sleep Efficiency by Age", x="Age", y="Sleep Efficiency")
+
+```
+
+
+```{r}
+# Model for sleep efficiency with consumption predictors
+model_sleep_efficiency_consumption <- lm(Sleep.efficiency ~ Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
+summary(model_sleep_efficiency_consumption)
+
+# Calculate RMSE for the model
+rmse_sleep_efficiency_consumption <- sqrt(mean(model_sleep_efficiency_consumption$residuals^2))
+rmse_sleep_efficiency_consumption
+
+```
+### Alcohol consumption, Smoking status, and Exercise frequency are statistically significant. The model explains 27.68% of the variability in sleep efficiency.
+
+
+```{r}
+#Full model for sleep efficiency, including all predictors
+
+model_sleep_efficiency_full <- lm(Sleep.efficiency ~ Age + REM.sleep.percentage + Deep.sleep.percentage + Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
+summary(model_sleep_efficiency_full)
+
+# Calculate RMSE for the model
+rmse_sleep_efficiency_full <- sqrt(mean(model_sleep_efficiency_full$residuals^2))
+rmse_sleep_efficiency_full
+
+```
+
+### This model explains a significant amount of the variance in sleep efficiency (R-squared = 0.7181) and has a low RMSE (0.072). The predictors (age, REM sleep percentage, deep sleep percentage, caffeine consumption, alcohol consumption, smoking status, and exercise frequency) are significant, making this model very effective for predicting sleep efficiency.
+
+### Age, REM sleep percentage, deep sleep percentage, caffeine consumption, alcohol consumption, smoking status, and exercise frequency are significant predictors of sleep efficiency.
+```{r}
+model_sleep_efficiency_stepwise <- step(model_sleep_efficiency_full, direction = "both")
+summary(model_sleep_efficiency_stepwise)
+
+# Calculate RMSE for the improved model
+rmse_sleep_efficiency_stepwise <- sqrt(mean(model_sleep_efficiency_stepwise$residuals^2))
+print(rmse_sleep_efficiency_stepwise)
+```
+The refined model explains a significant amount of variance in sleep efficiency (71.74%).
+Key lifestyle factors such as age, REM sleep percentage, deep sleep percentage, caffeine consumption, alcohol consumption, smoking status, and exercise frequency are significant predictors of sleep efficiency.
+The RMSE of 0.0717 indicates good predictive accuracy.
+
+
+```{r}
+# Log-transform the response variable
+model_sleep_efficiency_log <- lm(log(Sleep.efficiency) ~ Age + REM.sleep.percentage + Deep.sleep.percentage + Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
+summary(model_sleep_efficiency_log)
+
+rmse_sleep_efficiency_log <- sqrt(mean(model_sleep_efficiency_log$residuals^2))
+print(rmse_sleep_efficiency_log)
+```
+
+```{r}
+influential_points <- c(82, 307, 355)
+sleep_no_influential <- sleep[-influential_points, ]
+
+model_no_influential <- lm(log(Sleep.efficiency) ~ Age + REM.sleep.percentage + Deep.sleep.percentage + Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep_no_influential)
+summary(model_no_influential)
+
+rmse_no_influential <- sqrt(mean(model_no_influential$residuals^2))
+```
+
+```{r}
+model_sleep_efficiency <- lm(Sleep.efficiency ~ Age + REM.sleep.percentage + Deep.sleep.percentage + Caffeine.consumption + Alcohol.consumption + Smoking.status + Exercise.frequency, data = sleep)
+summary(model_sleep_efficiency)
+
+case1 <- data.frame(
+  Age = 23,
+  REM.sleep.percentage = 20,
+  Deep.sleep.percentage = 25,
+  Caffeine.consumption = 200,
+  Alcohol.consumption = 5,
+  Smoking.status = "Yes",
+  Exercise.frequency = 0
+)
+
+case2 <- data.frame(
+  Age = 50,
+  REM.sleep.percentage = 30,
+  Deep.sleep.percentage = 35,
+  Caffeine.consumption = 0,
+  Alcohol.consumption = 0,
+  Smoking.status = "No",
+  Exercise.frequency = 5
+)
+
+case3 <- data.frame(
+  Age = 22,
+  REM.sleep.percentage = 25,
+  Deep.sleep.percentage = 30,
+  Caffeine.consumption = 100,
+  Alcohol.consumption = 3,
+  Smoking.status = "No",
+  Exercise.frequency = 3
+)
+
+pred_case1 <- predict(model_sleep_efficiency, case1, interval = "prediction")
+pred_case2 <- predict(model_sleep_efficiency, case2, interval = "prediction")
+pred_case3 <- predict(model_sleep_efficiency, case3, interval = "prediction")
+
+print(pred_case1)
+print(pred_case2)
+print(pred_case3)
+```
+
